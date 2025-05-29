@@ -1,6 +1,6 @@
 A basic, intuitive web browser designed for basic use.
 No installation required, runs directly out of the .EXE file
---------------------------------------------------------
+______________________________________________________________
 NOTE:
 This App is not yet ready in its final release form.
 Alpha testing will begin with version 1.2, you can try the pre-alpha version now, but keep in mind that it is still unfinished, although mostly functional.
