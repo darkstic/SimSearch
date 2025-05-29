@@ -1,3 +1,5 @@
+# Please note that this is the Pre-Alpha version. Not the official release.
+
 import sys
 from PyQt6.QtCore import Qt, QSize, QUrl, QPoint, QMimeData, QPropertyAnimation
 from PyQt6.QtGui import QIcon, QPixmap, QDrag, QDropEvent, QAction
