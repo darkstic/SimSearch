@@ -1,3 +1,4 @@
+________________________________________________________________
 A basic, intuitive web browser designed for basic use.
 No installation required, runs directly out of the .EXE file
 ______________________________________________________________
