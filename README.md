@@ -8,7 +8,7 @@ Alpha testing will begin with version 1.2, you can try the pre-alpha version now
 ____________________________________________________________
 
 The Application exceeds github's upload limit, so you can access it here:
-https://drive.google.com/file/d/1JNK4MfW_-Y00rT4NZjkOP6U3nkdLHnID/view?usp=drive_link
+https://drive.google.com/file/d/1AXC_Z4Zl-j22iW9MmLeVg2ZygLMW3HmX/view?usp=sharing
 _______________________________________________________________
 
 ![SimSearch Logo](https://github.com/user-attachments/assets/5b754f9a-8f9e-4c67-8026-5b32a4234f33)
