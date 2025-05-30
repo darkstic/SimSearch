@@ -1,15 +1,16 @@
-# Please note that this is the Pre-Alpha version. Not the official release.
-
 import sys
+import os
+import json
 from PyQt6.QtCore import Qt, QSize, QUrl, QPoint, QMimeData, QPropertyAnimation
 from PyQt6.QtGui import QIcon, QPixmap, QDrag, QDropEvent, QAction
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton,
-    QLabel, QScrollArea, QGridLayout, QStackedLayout, QFileDialog, QMenu, QFrame
+    QLabel, QScrollArea, QGridLayout, QStackedLayout, QFileDialog, QMenu, QFrame, QToolBar, QLineEdit,
 )
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
 DEFAULT_SEARCH_URL = "https://www.google.com"
+PERSISTENCE_FILE = "simsearch_state.json"
 
 class CircularTabButton(QWidget):
     def __init__(self, simsearch_ref, icon=None, label="", on_click=None, on_close=None, on_right_click=None):
@@ -21,7 +22,6 @@ class CircularTabButton(QWidget):
 
         self.layout = QVBoxLayout()
         self.layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setLayout(self.layout)
 
         self.button = QPushButton()
         self.button.setIcon(icon if icon else QIcon())
@@ -32,8 +32,8 @@ class CircularTabButton(QWidget):
         self.close_button = QPushButton("X")
         self.close_button.setFixedSize(16, 16)
         self.close_button.setStyleSheet("QPushButton { background-color: red; color: white; border: none; border-radius: 8px; font-size: 10px; }")
-        self.close_button.setParent(self.button)
-        self.close_button.move(48, 0)
+        self.close_button.setParent(self)
+        self.close_button.move(60, 0)
         self.close_button.raise_()
         if on_close:
             self.close_button.clicked.connect(on_close)
@@ -46,6 +46,7 @@ class CircularTabButton(QWidget):
 
         self.layout.addWidget(self.button)
         self.layout.addWidget(self.label)
+        self.setLayout(self.layout)
 
         if on_click:
             self.button.clicked.connect(lambda: on_click())
@@ -102,14 +103,29 @@ class SimSearch(QMainWindow):
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
-        self.main_layout = QHBoxLayout(self.central_widget)
+        self.main_layout = QVBoxLayout(self.central_widget)
+
+        self.toolbar = QToolBar()
+        self.address_bar = QLineEdit()
+        self.address_bar.setPlaceholderText("Enter URL...")
+        self.address_bar.returnPressed.connect(self.load_address)
+        copy_button = QPushButton("Copy")
+        copy_button.clicked.connect(self.copy_url)
+
+        self.toolbar.addWidget(QLabel("URL: "))
+        self.toolbar.addWidget(self.address_bar)
+        self.toolbar.addWidget(copy_button)
+        self.main_layout.addWidget(self.toolbar)
+
+        self.content_layout = QHBoxLayout()
         self.view_stack = QStackedLayout()
 
         self.sidebar = self._build_sidebar()
-        self.main_layout.addLayout(self.view_stack)
-        self.main_layout.addWidget(self.sidebar)
+        self.content_layout.addLayout(self.view_stack)
+        self.content_layout.addWidget(self.sidebar)
+        self.main_layout.addLayout(self.content_layout)
 
-        self.add_new_tab(DEFAULT_SEARCH_URL)
+        self.load_state()
 
     def _build_sidebar(self):
         sidebar_container = QWidget()
@@ -149,14 +165,15 @@ class SimSearch(QMainWindow):
         sidebar_layout.addWidget(scroll)
 
         new_tab_btn = QPushButton("+ New Tab")
-        new_tab_btn.setStyleSheet("font-weight: bold; background-color: #007bff; color: white; padding: 8px; font-size: 16px;")
+        new_tab_btn.setStyleSheet("font-weight: bold; background-color: #007bff; color: white; padding: 5px; font-size: 14px;")
         new_tab_btn.clicked.connect(lambda: self.add_new_tab(DEFAULT_SEARCH_URL))
         sidebar_layout.addWidget(new_tab_btn)
 
         open_html_btn = QPushButton("Open HTML File")
-        open_html_btn.setStyleSheet("font-size: 10px; padding: 2px; margin-top: 5px;")
+        open_html_btn.setStyleSheet("font-size: 10px; padding: 2px;")
         open_html_btn.clicked.connect(self.open_html_file)
         sidebar_layout.addWidget(open_html_btn)
+
 
         sidebar_layout.addStretch()
         return sidebar_container
@@ -183,18 +200,26 @@ class SimSearch(QMainWindow):
         browser.loadFinished.connect(lambda ok, b=browser, t=tab_button: self._update_tab_info(b, t))
         browser.titleChanged.connect(lambda title, t=tab_button: t.set_label(title))
         browser.iconChanged.connect(lambda icon, t=tab_button: t.set_icon(icon))
+        browser.urlChanged.connect(lambda url, b=browser: self._update_address_bar_if_active(b, url))
 
         def context_menu(point):
             menu = QMenu()
             add_fav = menu.addAction("Add to Favorites")
+            reload_page = menu.addAction("Reload Tab")
+            close_tab = menu.addAction("Close Tab")
             action = menu.exec(browser.mapToGlobal(point))
             if action == add_fav:
                 self.add_to_favorites(tab_button.label.text(), browser.url().toString(), browser.icon())
+            elif action == reload_page:
+                browser.reload()
+            elif action == close_tab:
+                on_close()
 
         browser.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         browser.customContextMenuRequested.connect(context_menu)
 
         self.switch_to_tab(index)
+        self.save_state()
 
     def _update_tab_info(self, browser, tab_button):
         icon = browser.icon()
@@ -204,12 +229,20 @@ class SimSearch(QMainWindow):
         if title:
             tab_button.set_label(title[:20])
 
+    def _update_address_bar_if_active(self, browser, url):
+        index = self.tabs.index(browser)
+        if index == self.active_tab_index:
+            self.address_bar.setText(url.toString())
+
     def switch_to_tab(self, index):
         if 0 <= index < len(self.tabs):
             self.active_tab_index = index
             self.view_stack.setCurrentIndex(index)
             for i, btn in enumerate(self.tab_buttons):
                 btn.set_active(i == index)
+            # Update address bar to match the new active tab
+            current_url = self.tabs[index].url().toString()
+            self.address_bar.setText(current_url)
 
     def close_tab(self, index):
         if 0 <= index < len(self.tabs):
@@ -218,8 +251,8 @@ class SimSearch(QMainWindow):
             widget.deleteLater()
             self.tab_buttons.pop(index)
             self._rebuild_tab_grid()
-            if self.tabs:
-                self.switch_to_tab(min(index, len(self.tabs) - 1))
+            self.switch_to_tab(min(index, len(self.tabs) - 1))
+            self.save_state()
 
     def add_to_favorites(self, label, url, icon):
         fav_index = len(self.favorites)
@@ -230,11 +263,13 @@ class SimSearch(QMainWindow):
                     self.fav_grid.itemAt(i).widget().setParent(None)
                     self.favorites.pop(i)
                     self._rebuild_fav_grid()
+                    self.save_state()
                     break
 
         btn = CircularTabButton(self, icon, label, on_click=lambda: self.add_new_tab(url), on_right_click=remove_fav)
         self.favorites.append((label, url, btn))
         self._rebuild_fav_grid()
+        self.save_state()
 
     def _rebuild_fav_grid(self):
         for i in reversed(range(self.fav_grid.count())):
@@ -261,6 +296,7 @@ class SimSearch(QMainWindow):
             self.view_stack.insertWidget(target_index, widget)
             self._rebuild_tab_grid()
             self.switch_to_tab(target_index)
+            self.save_state()
 
     def open_html_file(self):
         file_dialog = QFileDialog()
@@ -268,6 +304,50 @@ class SimSearch(QMainWindow):
         if file_dialog.exec():
             selected_file = file_dialog.selectedFiles()[0]
             self.add_new_tab(QUrl.fromLocalFile(selected_file).toString())
+
+    def save_state(self):
+        state = {
+            "tabs": [self.tabs[i].url().toString() for i in range(len(self.tabs))],
+            "favorites": [(label, url) for label, url, _ in self.favorites]
+        }
+        try:
+            with open(PERSISTENCE_FILE, "w") as f:
+                json.dump(state, f)
+        except Exception as e:
+            print(f"Error saving state: {e}")
+
+    def load_state(self):
+        if os.path.exists(PERSISTENCE_FILE):
+            try:
+                with open(PERSISTENCE_FILE, "r") as f:
+                    state = json.load(f)
+                for url in state.get("tabs", [DEFAULT_SEARCH_URL]):
+                    self.add_new_tab(url)
+                for label, url in state.get("favorites", []):
+                    self.add_to_favorites(label, url, QIcon())
+            except Exception as e:
+                print(f"Error loading state: {e}")
+        else:
+            self.add_new_tab(DEFAULT_SEARCH_URL)
+
+    def clear_all_data(self):
+        if os.path.exists(PERSISTENCE_FILE):
+            os.remove(PERSISTENCE_FILE)
+        QApplication.quit()
+        os.execl(sys.executable, sys.executable, *sys.argv)
+
+    def load_address(self):
+        url = self.address_bar.text()
+        if not url.startswith("http"):
+            url = "https://" + url
+        if self.active_tab_index != -1:
+            self.tabs[self.active_tab_index].setUrl(QUrl(url))
+
+    def copy_url(self):
+        if self.active_tab_index != -1:
+            url = self.tabs[self.active_tab_index].url().toString()
+            clipboard = QApplication.clipboard()
+            clipboard.setText(url)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
