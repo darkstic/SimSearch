@@ -4,7 +4,8 @@ No installation required, runs directly out of the .EXE file
 ______________________________________________________________
 NOTE:
 This App is not yet ready in its final release form.
-Alpha testing will begin with version 1.2, you can try the pre-alpha version now, but keep in mind that it is still unfinished, although mostly functional.
+This project has just entered its first phase of "closed" Alpha teting.
+Anyone wishing to test, or otherwise use the program must abide by the terms stated in the license agreement above ^.
 ____________________________________________________________
 
 The Application exceeds github's upload limit, so you can access it here:
