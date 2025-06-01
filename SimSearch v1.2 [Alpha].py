@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
 DEFAULT_SEARCH_URL = "https://www.google.com"
-PERSISTENCE_FILE = "simsearch_state.json"
+PERSISTENCE_FILE = "C:\\Users\\Public\\Documents\\simsearch_state.json"
 
 class CircularTabButton(QWidget):
     def __init__(self, simsearch_ref, icon=None, label="", on_click=None, on_close=None, on_right_click=None):
