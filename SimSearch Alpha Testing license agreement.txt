@@ -1,0 +1,56 @@
+SimSearch Alpha Testing license agreement:
+==========================================
+
+Compliance with the rules, statutes and 
+requirements outlined in this document is
+absolutely necessary for eligibility for 
+participation in the Alpha testing process
+for the SimSearch web browser. Any violation,
+non-compliant action, or otherwise miscreant
+behaviors in association with the use and testing
+of this product will result in an immediate 
+disqualification for testing or use of the product.
+Any actions on the part of the user, deemed illegal,
+unlawful, or otherwise as a violation of legal
+protections may result in legal action against the
+perpetrator(s) on the part of me, the developer.
+
+Or in other words, don't be a jerk. It's annoying
+and it makes people dislike you. We don't want that.
+
+1. Users must have been contacted and given written
+approval from myself (the developer) to be eligible for
+alpha testing SimSearch.
+
+2. No serious attempts may be made to reverse engineer or
+modify the functionality of the SimSearch.EXE file.
+
+3. Absolutely no attempts to plagiarize, violate the copyright
+of, or take credit for the SimSearch program, in whole or in
+part will be tolerated.
+
+4. Feedback for the project is highly encouraged and
+necessary for the development and improvement of the program.
+All feedback should be sent directly to me (the developer) through
+private avenues of communication.
+
+5. SimSearch does not currently employ any form of content
+restrictions or website blocking. This means that the risk of
+encountering dangerous content online though use of the program is
+possible. Moral and ethical conduct is required during use of the
+program, and any use of SimSearch for questionable, yucky, or otherwise
+damaging use is prohibited and may lead to a permanent ban for use of
+SimSearch in the future. (I know I'm being somewhat vague, but you know
+what I'm talking about.)
+
+6. I (the developer) cannot take any responsibility for the actions
+and use of anyone using SimSearch. Any illegal online activity, 
+including but not limited to: piracy, extorsion, visiting filelist.ro,
+cyberbullying, posting obnoxious reddit comments, or viewing illegal
+content is absolutely prohibited and is not condoned or permitted by
+me (the developer).
+
+Use of the SimSearch web browser indicates a legal agreement to
+abide by the above terms. Happy testing!
+
+-- darkstic
