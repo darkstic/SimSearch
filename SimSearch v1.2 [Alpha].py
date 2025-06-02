@@ -5,7 +5,7 @@ from PyQt6.QtCore import Qt, QSize, QUrl, QPoint, QMimeData, QPropertyAnimation
 from PyQt6.QtGui import QIcon, QPixmap, QDrag, QDropEvent, QAction
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton,
-    QLabel, QScrollArea, QGridLayout, QStackedLayout, QFileDialog, QMenu, QFrame, QToolBar, QLineEdit,
+    QLabel, QScrollArea, QGridLayout, QStackedLayout, QFileDialog, QMenu, QFrame, QToolBar, QLineEdit, QSpacerItem, QSizePolicy
 )
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
@@ -106,26 +106,77 @@ class SimSearch(QMainWindow):
         self.main_layout = QVBoxLayout(self.central_widget)
 
         self.toolbar = QToolBar()
+
         self.address_bar = QLineEdit()
         self.address_bar.setPlaceholderText("Enter URL...")
         self.address_bar.returnPressed.connect(self.load_address)
+
         copy_button = QPushButton("Copy")
         copy_button.clicked.connect(self.copy_url)
+
+        nav_layout = QHBoxLayout()
+        self._add_nav_button(nav_layout, "←", self.go_back)
+        self._add_nav_button(nav_layout, "→", self.go_forward)
+        self._add_nav_button(nav_layout, "⟳", self.refresh_page, square=True)
+        nav_widget = QWidget()
+        nav_widget.setLayout(nav_layout)
+        nav_widget.setFixedHeight(45)
 
         self.toolbar.addWidget(QLabel("URL: "))
         self.toolbar.addWidget(self.address_bar)
         self.toolbar.addWidget(copy_button)
+        self.toolbar.addWidget(nav_widget)
         self.main_layout.addWidget(self.toolbar)
 
         self.content_layout = QHBoxLayout()
         self.view_stack = QStackedLayout()
 
-        self.sidebar = self._build_sidebar()
+
+        sidebar_widget = self._build_sidebar()
+
+        spacer = QSpacerItem(10, 10, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+        self.content_layout.addItem(spacer)
         self.content_layout.addLayout(self.view_stack)
-        self.content_layout.addWidget(self.sidebar)
+        self.content_layout.addWidget(sidebar_widget)
         self.main_layout.addLayout(self.content_layout)
 
         self.load_state()
+
+    def _add_nav_button(self, layout, text, callback, square=False):
+        button = QPushButton(text)
+        size = 36
+        font_size = 24  
+        if square:
+            button.setFixedSize(size, size)
+            style = f"""
+                QPushButton {{
+                    border-radius: 4px;
+                    background-color: white;
+                    font-weight: bold;
+                    color: black;
+                    font-size: {font_size}px;
+                }}
+                QPushButton:hover {{
+                    background-color: #ddd;
+                }}
+            """
+        else:
+            button.setFixedSize(size, size)
+            style = f"""
+                QPushButton {{
+                    border-radius: {size // 2}px;
+                    background-color: white;
+                    font-weight: bold;
+                    color: black;
+                    font-size: {font_size}px;
+                }}
+                QPushButton:hover {{
+                    background-color: #ddd;
+                }}
+            """
+        button.setStyleSheet(style)
+        button.clicked.connect(callback)
+        layout.addWidget(button)
 
     def _build_sidebar(self):
         sidebar_container = QWidget()
@@ -176,7 +227,22 @@ class SimSearch(QMainWindow):
 
 
         sidebar_layout.addStretch()
+        sidebar_layout = QVBoxLayout()
+        sidebar_layout.setContentsMargins(0, 12, 0, 0)
+
         return sidebar_container
+    
+    def go_back(self):
+        if self.active_tab_index != -1:
+            self.tabs[self.active_tab_index].back()
+
+    def go_forward(self):
+        if self.active_tab_index != -1:
+            self.tabs[self.active_tab_index].forward()
+
+    def refresh_page(self):
+        if self.active_tab_index != -1:
+            self.tabs[self.active_tab_index].reload()
 
     def add_new_tab(self, url):
         browser = QWebEngineView()
@@ -240,7 +306,7 @@ class SimSearch(QMainWindow):
             self.view_stack.setCurrentIndex(index)
             for i, btn in enumerate(self.tab_buttons):
                 btn.set_active(i == index)
-            # Update address bar to match the new active tab
+
             current_url = self.tabs[index].url().toString()
             self.address_bar.setText(current_url)
 
